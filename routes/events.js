@@ -12,9 +12,9 @@ router.get('/:id', eventsController.getByIdPublic);
 
 // Routes protégées (organisateur/admin)
 router.post('/', authMiddleware, requireRole(['organisateur', 'admin']), eventsController.create);
-router.put('/:id', canModifyEvent, eventsController.update);
-router.patch('/:id/publish', canModifyEvent, eventsController.publish);
-router.delete('/:id', canModifyEvent, eventsController.delete);
-router.post('/:id/image', canModifyEvent, eventsController.uploadImage);
+router.put('/:id', authMiddleware, canModifyEvent, eventsController.update);
+router.patch('/:id/publish', authMiddleware, canModifyEvent, eventsController.publish);
+router.delete('/:id', authMiddleware, canModifyEvent, eventsController.delete);
+router.post('/:id/image', authMiddleware, canModifyEvent, eventsController.uploadImage);
 
 module.exports = router;
