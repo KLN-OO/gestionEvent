@@ -91,7 +91,7 @@ exports.getFilteredPublic = async (req, res) => {
 // Crée un nouvel événement
 exports.create = async (req, res) => {
     try {
-        const userId = req.utilisateur?.utilisateur_id;
+        const userId = req.utilisateur?.utilisateur_id || req.utilisateur?.userId || req.utilisateur?.id || req.utilisateur?.sub;
         if (!userId) return res.status(401).json({ message: "Utilisateur non authentifié." });
 
         const { titre, description, date_debut, date_fin, categorie_id, lieu_id } = req.body;
