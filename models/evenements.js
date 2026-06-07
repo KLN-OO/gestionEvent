@@ -1,10 +1,11 @@
 const { DataTypes } = require('sequelize');
 
-module.exports = (sequelize) => {
+module.exports = (sequelize) => {  // <-- Assurez-vous que le paramètre `sequelize` est bien défini ici
   const Evenement = sequelize.define('Evenement', {
     evenement_id: {
       type: DataTypes.INTEGER,
       primaryKey: true,
+      autoIncrement: true,
     },
     titre: {
       type: DataTypes.STRING,
@@ -25,7 +26,7 @@ module.exports = (sequelize) => {
         key: 'categorie_id',
       },
     },
-    est_publie: {           // <--- déplacé ici, au même niveau que categorie_id
+    est_publie: {
       type: DataTypes.BOOLEAN,
       defaultValue: false,
     },
@@ -45,11 +46,20 @@ module.exports = (sequelize) => {
     },
     cree_le: {
       type: DataTypes.DATE,
+      defaultValue: DataTypes.NOW,
     },
   }, {
     tableName: 'evenements',
     timestamps: false,
   });
+
+  // Ajoutez cette méthode pour définir les associations
+  Evenement.associate = (models) => {
+    Evenement.hasMany(models.Inscription, {
+      foreignKey: 'evenement_id',
+      as: 'inscriptions'
+    });
+  };
 
   return Evenement;
 };

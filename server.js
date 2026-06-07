@@ -1,6 +1,8 @@
-require('dotenv').config();
+require('dotenv').config({ path: require('path').resolve(__dirname, '.env') });
 const express = require('express');
 const cors = require('cors');
+const swaggerUi = require('swagger-ui-express');
+const swaggerDocument = require('../swagger.json');
 const authMiddleware = require('./middlewares/authMiddleware');
 
 const eventsRoutes = require('./routes/events');
@@ -9,19 +11,38 @@ const utilisateurRoutes = require('./routes/utilisateurRoutes');
 const userRoutes = require('./routes/userRoutes');
 
 const app = express();
+
 app.use(cors());
 app.use(express.json());
 
-// Routes PUBLIQUES (sans authentification)
-app.use('/api/utilisateurs', utilisateurRoutes); // Routes pour register/login
-app.use('/api/events', require('./routes/events')); // Routes publiques pour les événements
+// ----------------------------
+// SWAGGER DOCUMENTATION
+// ----------------------------
+app.use('/api-docs', swaggerUi.serve, swaggerUi.setup(swaggerDocument));
 
-// Routes PROTÉGÉES (avec authentification)
-app.use('/api/events', authMiddleware, eventsRoutes); // Routes protégées pour les événements (POST/PUT/DELETE)
+// ----------------------------
+// ROUTES PUBLIQUES
+// ----------------------------
+
+// login / register
+app.use('/api/utilisateurs', utilisateurRoutes);
+
+// events publics (GET)
+app.use('/api/events', eventsRoutes);
+
+
+// ----------------------------
+// ROUTES PROTÉGÉES
+// ----------------------------
+
 app.use('/api/inscriptions', authMiddleware, inscriptionsRoutes);
-app.use('/api/users', authMiddleware, userRoutes); // Routes utilisateur
+app.use('/api/users', authMiddleware, userRoutes);
 
+
+// ----------------------------
 const PORT = process.env.PORT || 5000;
+
 app.listen(PORT, "0.0.0.0", () => {
-  console.log(`✅Server running on port ${PORT}`);
+    console.log(`✅ Server running on http://localhost:${PORT}`);
+    console.log(`📚 API Documentation: http://localhost:${PORT}/api-docs`);
 });

@@ -3,6 +3,18 @@ const db = require('../models');
 // Crée une inscription
 exports.create = async (req, res) => {
     try {
+        // Vérifie si l'utilisateur est déjà inscrit à cet événement
+        const existingInscription = await db.Inscription.findOne({
+            where: {
+                utilisateur_id: req.utilisateur.utilisateur_id,
+                evenement_id: req.params.id,
+            },
+        });
+
+        if (existingInscription) {
+            return res.status(400).json({ message: 'Vous êtes déjà inscrit à cet événement.' });
+        }
+
         const inscription = await db.Inscription.create({
             utilisateur_id: req.utilisateur.utilisateur_id,
             evenement_id: req.params.id,
@@ -38,12 +50,22 @@ exports.getByEvent = async (req, res) => {
     }
 };
 
-// Récupère les inscriptions de l'utilisateur connecté
 exports.getMine = async (req, res) => {
     try {
-        const inscriptions = await db.Inscription.findAll({ where: { utilisateur_id: req.utilisateur.utilisateur_id } });
+        const inscriptions = await db.Inscription.findAll({
+            where: { utilisateur_id: req.utilisateur.utilisateur_id },
+            include: [
+                {
+                    model: db.Evenement,
+                    as: 'evenement',
+                    attributes: ['evenement_id', 'titre', 'date_debut', 'date_fin', 'lieu_id']
+                }
+            ]
+        });
         res.json(inscriptions);
     } catch (error) {
-        res.status(500).json({ message: 'Erreur serveur', error });
+        console.error("Erreur dans getMine :", error); // Log détaillé pour le débogage
+        res.status(500).json({ message: 'Erreur serveur', error: error.message });
     }
 };
+

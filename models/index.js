@@ -1,19 +1,31 @@
 const fs = require('fs');
 const path = require('path');
-require('dotenv').config();
+require('dotenv').config({ path: path.resolve(__dirname, '../.env') });
 const Sequelize = require('sequelize');
 
-// Initialisation de Sequelize avec ta configuration
-const sequelize = new Sequelize(
-    process.env.DB_NAME,
-    process.env.DB_USER,
-    process.env.DB_PASSWORD,
-    {
-        host: process.env.DB_HOST,
+// Initialisation de Sequelize avec Supabase si DATABASE_URL est défini.
+const sequelize = process.env.DATABASE_URL
+    ? new Sequelize(process.env.DATABASE_URL, {
         dialect: 'postgres',
-        logging: false, // Désactive les logs SQL si nécessaire
-    }
-);
+        logging: false,
+        dialectOptions: {
+            ssl: {
+                require: true,
+                rejectUnauthorized: false,
+            },
+        },
+    })
+    : new Sequelize(
+        process.env.DB_NAME,
+        process.env.DB_USER,
+        process.env.DB_PASSWORD,
+        {
+            host: process.env.DB_HOST,
+            port: process.env.DB_PORT,
+            dialect: 'postgres',
+            logging: false,
+        }
+    );
 
 const db = {};
 
@@ -21,7 +33,7 @@ const db = {};
 fs.readdirSync(__dirname)
     .filter((file) => file !== 'index.js')
     .forEach((file) => {
-        const model = require(path.join(__dirname, file))(sequelize);
+        const model = require(path.join(__dirname, file))(sequelize);  // <-- Passez `sequelize` ici
         db[model.name] = model;
     });
 

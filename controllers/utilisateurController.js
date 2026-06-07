@@ -1,4 +1,4 @@
-require('dotenv').config();
+require('dotenv').config({ path: require('path').resolve(__dirname, '../.env') });
 const bcrypt = require('bcrypt');
 const { Utilisateur, Role } = require('../models');
 const jwt = require('jsonwebtoken');
@@ -16,6 +16,9 @@ exports.login = async (req, res) => {
     const motDePasseValide = await bcrypt.compare(mot_de_passe, utilisateur.mot_de_passe);
     if (!motDePasseValide) {
       return res.status(401).json({ message: 'Email ou mot de passe incorrect' });
+    }
+    if (!utilisateur.Role) {
+      return res.status(500).json({ message: 'Rôle utilisateur introuvable' });
     }
     const token = jwt.sign(
       {
@@ -50,6 +53,54 @@ exports.register = async (req, res) => {
       role_id: 2
     });
     res.status(201).json({ message: 'Utilisateur enregistré', utilisateur: nouvelUtilisateur });
+  } catch (error) {
+    console.error(error);
+    res.status(500).json({ message: 'Erreur serveur' });
+  }
+};
+exports.getMe = async (req, res) => {
+  try {
+    const utilisateur = await Utilisateur.findOne({
+      where: { utilisateur_id: req.utilisateur.utilisateur_id },
+      attributes: ['utilisateur_id', 'nom_utilisateur', 'email', 'prenom', 'nom'],
+      include: [{ model: Role, attributes: ['libelle'] }]
+    });
+
+    if (!utilisateur) {
+      return res.status(404).json({ message: 'Utilisateur introuvable' });
+    }
+
+    res.status(200).json(utilisateur);
+  } catch (error) {
+    console.error(error);
+    res.status(500).json({ message: 'Erreur serveur' });
+  }
+};
+
+exports.updateMe = async (req, res) => {
+  try {
+    const { nom_utilisateur, email, prenom, nom } = req.body;
+
+    const updateData = {};
+    if (nom_utilisateur !== undefined) updateData.nom_utilisateur = nom_utilisateur;
+    if (email !== undefined) updateData.email = email;
+    if (prenom !== undefined) updateData.prenom = prenom;
+    if (nom !== undefined) updateData.nom = nom;
+
+    const utilisateur = await Utilisateur.findByPk(req.utilisateur.utilisateur_id);
+    if (!utilisateur) {
+      return res.status(404).json({ message: 'Utilisateur introuvable' });
+    }
+
+    await utilisateur.update(updateData);
+
+    const updated = await Utilisateur.findOne({
+      where: { utilisateur_id: req.utilisateur.utilisateur_id },
+      attributes: ['utilisateur_id', 'nom_utilisateur', 'email', 'prenom', 'nom'],
+      include: [{ model: Role, attributes: ['libelle'] }]
+    });
+
+    res.status(200).json(updated);
   } catch (error) {
     console.error(error);
     res.status(500).json({ message: 'Erreur serveur' });
