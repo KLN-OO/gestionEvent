@@ -6,8 +6,9 @@ module.exports = async (req, res, next) => {
         if (!event) {
             return res.status(404).json({ message: 'Événement non trouvé' });
         }
-        // Vérifie si l'utilisateur est l'organisateur ou un admin
-        if (event.organisateur_id !== req.utilisateur.utilisateur_id && req.utilisateur.role !== 'admin') {
+        // Vérifie si l'utilisateur est l'organisateur ou un admin (comparaison en string pour éviter number vs string)
+        const userId = req.utilisateur?.utilisateur_id || req.utilisateur?.userId || req.utilisateur?.id;
+        if (String(event.organisateur_id) !== String(userId) && req.utilisateur?.role !== 'admin') {
             return res.status(403).json({ message: 'Non autorisé : vous ne pouvez pas modifier cet événement' });
         }
         next();
